@@ -122,6 +122,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(ValidationException ex) {
+        ErrorResponse body = ErrorResponse.builder()
+            .status(422)
+            .error("Validation Error")
+            .message(ex.getMessage())
+            .build();
+        return ResponseEntity.unprocessableEntity().body(body);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, WebRequest request) {
         log.error("Unexpected error occurred: {}", ex.getMessage(), ex);
