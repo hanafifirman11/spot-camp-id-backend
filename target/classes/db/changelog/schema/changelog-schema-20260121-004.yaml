@@ -1,0 +1,112 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260121-005-schema-add-product-stock
+      author: codex
+      context: base
+      labels: schema
+      changes:
+        - createTable:
+            tableName: product_stock
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: stock_total
+                  type: INTEGER
+              - column:
+                  name: current_stock
+                  type: INTEGER
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_by
+                  type: BIGINT
+
+        - createTable:
+            tableName: product_stock_history
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: booking_id
+                  type: BIGINT
+              - column:
+                  name: change_type
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: balance_after
+                  type: INTEGER
+              - column:
+                  name: remark
+                  type: VARCHAR(500)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_by
+                  type: BIGINT
+
+        - addForeignKeyConstraint:
+            baseTableName: product_stock
+            baseColumnNames: product_id
+            referencedTableName: products
+            referencedColumnNames: id
+            constraintName: fk_product_stock_product
+
+        - addForeignKeyConstraint:
+            baseTableName: product_stock_history
+            baseColumnNames: product_id
+            referencedTableName: products
+            referencedColumnNames: id
+            constraintName: fk_stock_history_product
+
+        - addForeignKeyConstraint:
+            baseTableName: product_stock_history
+            baseColumnNames: booking_id
+            referencedTableName: bookings
+            referencedColumnNames: id
+            constraintName: fk_stock_history_booking
+
+        - sql:
+            splitStatements: true
+            endDelimiter: ";"
+            sql: |
+              INSERT INTO product_stock (product_id, stock_total, current_stock, updated_at)
+              SELECT id, stock_total, current_stock, CURRENT_TIMESTAMP
+              FROM products
+              WHERE stock_total IS NOT NULL OR current_stock IS NOT NULL;

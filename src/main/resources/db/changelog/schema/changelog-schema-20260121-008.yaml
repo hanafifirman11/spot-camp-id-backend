@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260121-008-add-booking-item-subtotal
+      author: codex
+      changes:
+        - addColumn:
+            tableName: booking_items
+            columns:
+              - column:
+                  name: subtotal
+                  type: DECIMAL(12,2)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: booking_items
+            columns:
+              - column:
+                  name: subtotal
+                  valueComputed: total_price

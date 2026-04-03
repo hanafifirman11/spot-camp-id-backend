@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260121-001-seed-default
+      author: codex
+      context: base
+      labels: seed
+      changes:
+        - sqlFile:
+            path: db/changelog/query/data/data-20260121-001.sql
+            relativeToChangelogFile: false
+            splitStatements: true
+            endDelimiter: ";"
+  - changeSet:
+      id: 20260121-002-seed-dev
+      author: codex
+      context: dev
+      labels: dev-seed
+      changes:
+        - sqlFile:
+            path: db/changelog/query/data/data-20260121-002.sql
+            relativeToChangelogFile: false
+            splitStatements: true
+            endDelimiter: ";"

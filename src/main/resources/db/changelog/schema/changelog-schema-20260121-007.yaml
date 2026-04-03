@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260121-007-booking-payment-bank-details
+      author: codex
+      labels: schema
+      changes:
+        - addColumn:
+            tableName: bookings
+            columns:
+              - column:
+                  name: spot_product_id
+                  type: BIGINT
+              - column:
+                  name: payment_bank_name
+                  type: VARCHAR(100)
+              - column:
+                  name: payment_bank_account_number
+                  type: VARCHAR(50)
+              - column:
+                  name: payment_bank_account_name
+                  type: VARCHAR(200)

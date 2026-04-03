@@ -1,0 +1,377 @@
+# Application Configuration - Spot Camp ID Backend
+spring:
+  application:
+    name: spot-camp-id-backend
+    version: 1.0.0
+  
+  profiles:
+    active: default
+  
+  # Database Configuration
+  # datasource:
+  #   url: jdbc:postgresql://localhost:5432/spotcamp_db
+  #   username: ${DB_USERNAME:postgres}
+  #   password: ${DB_PASSWORD:postgres}
+  #   driver-class-name: org.postgresql.Driver
+  #   hikari:
+  #     maximum-pool-size: 20
+  #     minimum-idle: 5
+  #     connection-timeout: 30000
+  #     idle-timeout: 600000
+  #     max-lifetime: 1800000
+  
+  # H2 Console Configuration
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        trace: false
+        web-allow-others: true
+
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update # Changed from validate for H2 ease
+    properties:
+      hibernate:
+        format_sql: false
+        generate_statistics: false
+    show-sql: false
+    open-in-view: false
+  
+  # Liquibase Migration
+  liquibase:
+    enabled: true
+    change-log: classpath:db/master-changelog.yaml
+    contexts: base
+  
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: spot-camp-backend
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.spotcamp.*.events"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    template:
+      default-topic: spot-camp-events
+  
+  # Jackson Configuration
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+    time-zone: Asia/Jakarta
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSXXX
+  
+  # Security Configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8080}
+  
+  # Cache Configuration
+  cache:
+    type: caffeine
+    caffeine:
+      spec: expireAfterWrite=10m,maximumSize=1000
+  
+  # Mail Configuration
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  # Servlet Configuration
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api/v1
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+  error:
+    include-stacktrace: never
+    include-message: always
+
+# Management & Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,logfile
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Custom Application Properties
+app:
+  # JWT Configuration
+  jwt:
+    secret: ${JWT_SECRET:mySecretKey123456789012345678901234567890}
+    expiration: ${JWT_EXPIRATION:3600000}  # 1 hour
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # 7 days
+  
+  # DOKU Payment Configuration
+  doku:
+    client-id: ${DOKU_CLIENT_ID:}
+    secret-key: ${DOKU_SECRET_KEY:}
+    environment: ${DOKU_ENVIRONMENT:sandbox}  # sandbox or production
+    webhook-url: ${DOKU_WEBHOOK_URL:http://localhost:8080/api/v1/webhooks/doku}
+  
+  # Cart Configuration
+  cart:
+    expiry-minutes: 15
+    cleanup-interval-minutes: 5
+  
+  # File Upload Configuration
+  upload:
+    base-path: ${UPLOAD_BASE_PATH:/var/uploads/spotcamp}
+    allowed-types: jpg,jpeg,png,gif,pdf
+    max-size-mb: 10
+  
+  # Scheduling Configuration
+  scheduler:
+    pool-size: 10
+  
+  # Rate Limiting
+  rate-limit:
+    enabled: true
+    public-requests-per-minute: 100
+    authenticated-requests-per-minute: 1000
+
+# Logging Configuration
+logging:
+  level:
+    com.spotcamp: ${LOG_LEVEL:INFO}
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/spot-camp-backend.log
+    max-size: 100MB
+    max-history: 30
+
+# SpringDoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+
+# Local Profile (H2 In-Memory)
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:h2:file:./data/spotcamp-db;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  liquibase:
+    contexts: base,dev
+  sql:
+    init:
+      mode: never
+#  sql:
+#    init:
+#      mode: always
+#      data-locations: classpath:data.sql
+
+logging:
+  level:
+    com.spotcamp.authuser: DEBUG
+    org.springframework.security: DEBUG
+
+---
+# Development Profile
+spring:
+  config:
+    activate:
+      on-profile: dev
+  
+  # Development Database - use local PostgreSQL or H2
+  datasource:
+    url: jdbc:postgresql://localhost:5432/spotcamp_dev
+  liquibase:
+    contexts: base,dev
+  
+  # JPA Configuration for Development
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  
+  # Development Logging
+logging:
+  level:
+    com.spotcamp: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+
+# Development specific properties
+app:
+  jwt:
+    secret: devSecretKey123456789012345678901234567890
+  doku:
+    environment: sandbox
+
+---
+# Local-Prod Profile (Prod-like with H2 + Liquibase disabled)
+spring:
+  config:
+    activate:
+      on-profile: local-prod
+  main:
+    lazy-initialization: true
+    banner-mode: "off"
+    log-startup-info: true
+  threads:
+    virtual:
+      enabled: true
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaStreamsAutoConfiguration
+      - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
+      - org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration
+      - org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  jmx:
+    enabled: false
+  datasource:
+    url: jdbc:h2:file:./data/spotcamp-db;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+    hikari:
+      maximum-pool-size: 10
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        boot:
+          allow_jdbc_metadata_access: false
+        temp:
+          use_jdbc_metadata_defaults: false
+  liquibase:
+    enabled: false
+  task:
+    scheduling:
+      enabled: false
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+management:
+  endpoints:
+    enabled-by-default: false
+  endpoint:
+    health:
+      enabled: true
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    com.spotcamp: INFO
+    root: WARN
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+  
+  # Production Database
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/spotcamp_prod}
+    hikari:
+      maximum-pool-size: 50
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+# Production Security
+server:
+  error:
+    include-stacktrace: never
+    include-message: never
+
+# Production Logging
+logging:
+  level:
+    com.spotcamp: INFO
+    root: WARN
+  file:
+    name: /var/log/spot-camp-backend/application.log
+
+# Production specific properties
+app:
+  kafka:
+    enabled: false
+  scheduler:
+    enabled: false
+  async:
+    enabled: false
+  doku:
+    environment: production
+  upload:
+    base-path: /data/uploads/spotcamp

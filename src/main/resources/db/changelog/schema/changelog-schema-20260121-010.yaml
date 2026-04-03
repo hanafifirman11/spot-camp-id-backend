@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260121-010-notification-type-constraint
+      author: spotcamp
+      changes:
+        - sql:
+            splitStatements: false
+            stripComments: true
+            sql: |
+              ALTER TABLE notifications DROP CONSTRAINT IF EXISTS chk_notification_type;
+              ALTER TABLE notifications ADD CONSTRAINT chk_notification_type
+              CHECK (type IN ('BOOKING_CREATED','BOOKING_CONFIRMED','BOOKING_CANCELLED','BOOKING_REMINDER','PAYMENT_SUCCESS','PAYMENT_FAILED','PAYMENT_REFUNDED','PAYMENT_PROOF_REUPLOAD','REVIEW_REQUEST','REVIEW_RESPONSE','PROMO_CODE','SYSTEM_ANNOUNCEMENT','MERCHANT_NEW_BOOKING','MERCHANT_PAYOUT','MERCHANT_LOW_STOCK'));

@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260121-004-seed-theme-tokens
+      author: codex
+      context: base
+      labels: local,uat,prod
+      changes:
+        - sqlFile:
+            path: db/changelog/query/data/data-20260121-004.sql
+            relativeToChangelogFile: false
+            splitStatements: true
+            endDelimiter: ";"

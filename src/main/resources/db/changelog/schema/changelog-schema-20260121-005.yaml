@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260121-005-booking-nullable-cart
+      author: codex
+      labels: schema
+      changes:
+        - dropNotNullConstraint:
+            tableName: bookings
+            columnName: campsite_id
+            columnDataType: BIGINT
+        - dropNotNullConstraint:
+            tableName: bookings
+            columnName: check_in_date
+            columnDataType: DATE
+        - dropNotNullConstraint:
+            tableName: bookings
+            columnName: check_out_date
+            columnDataType: DATE
