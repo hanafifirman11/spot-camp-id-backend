@@ -34,15 +34,34 @@ import java.nio.file.Paths;
 import java.util.UUID;
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.Set;
+import java.nio.file.StandardCopyOption;
+import java.io.IOException;
+
+import com.spotcamp.common.exception.ValidationException;
+import com.spotcamp.common.exception.BusinessException;
+import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * REST API for booking operations
  */
+@Slf4j
 @RestController
 @RequestMapping("/bookings")
 @RequiredArgsConstructor
 @Tag(name = "Bookings", description = "Booking and cart management operations")
 public class BookingController {
+
+    @Value("${app.upload.base-dir}")
+    private String uploadDir;
+
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+        MediaType.IMAGE_JPEG_VALUE,
+        MediaType.IMAGE_PNG_VALUE,
+        "application/pdf"
+    );
+    private static final long MAX_FILE_SIZE_BYTES = 5L * 1024 * 1024; // 5 MB
 
     private final BookingService bookingService;
     private final BookingMapper bookingMapper;
@@ -112,22 +131,43 @@ public class BookingController {
             @RequestParam("file") MultipartFile file) {
         Long userId = authenticationFacade.getCurrentUserId();
 
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+        // 1. Presence check
+        if (file == null || file.isEmpty()) {
+            throw new ValidationException("file", "File is required and cannot be empty");
         }
 
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        String fileUrl = "/api/v1/uploads/payments/" + bookingId + "/" + fileName;
+        // 2. Content-type check
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new ValidationException("file", "Only JPEG, PNG, and PDF files are allowed");
+        }
+
+        // 3. Size check
+        if (file.getSize() > MAX_FILE_SIZE_BYTES) {
+            throw new ValidationException("file", "File size must not exceed 5 MB");
+        }
+
+        // 4. Build safe filename — never use original filename
+        String extension = switch (contentType) {
+            case "image/jpeg"    -> ".jpg";
+            case "image/png"     -> ".png";
+            case "application/pdf" -> ".pdf";
+            default -> throw new ValidationException("file", "Unsupported file type"); // safety net, should not reach here
+        };
+        String safeFileName = UUID.randomUUID() + extension;
+
+        // 5. Save
         try {
-            Path uploadPath = Paths.get("uploads/payments/" + bookingId);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-            Files.copy(file.getInputStream(), uploadPath.resolve(fileName));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            Path uploadPath = Paths.get(uploadDir, "payments", String.valueOf(bookingId));
+            Files.createDirectories(uploadPath);
+            Files.copy(file.getInputStream(), uploadPath.resolve(safeFileName),
+                       StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            log.error("Failed to save payment proof for booking {}: {}", bookingId, e.getMessage(), e);
+            throw new BusinessException("Failed to save payment proof. Please try again.");
         }
 
+        String fileUrl = "/api/v1/uploads/payments/" + bookingId + "/" + safeFileName;
         Booking booking = bookingService.uploadPaymentProof(userId, bookingId, fileUrl);
         return ResponseEntity.ok(bookingMapper.toResponse(booking));
     }
