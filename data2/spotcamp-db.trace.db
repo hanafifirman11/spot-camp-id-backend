@@ -1,4 +1,0 @@
-2026-01-21 12:00:53.020654+07:00 jdbc[4]: exception
-org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "CREATE UNIQUE INDEX idx_map_config_active ON map_configurations(campsite_id) \000a    [*]WHERE status = 'ACTIVE'"; SQL statement:
-CREATE UNIQUE INDEX idx_map_config_active ON map_configurations(campsite_id) 
-    WHERE status = 'ACTIVE' [42000-232]

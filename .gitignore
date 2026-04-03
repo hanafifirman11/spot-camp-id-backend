@@ -1,0 +1,28 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+
+# Logs
+logs/
+*.log
+*.log.gz
+
+# Local DB files
+data/
+data2/
+uploads/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+
+# Spring Boot
+application-local.properties
+application-local.yml
