@@ -155,6 +155,7 @@ app:
   
   # File Upload Configuration
   upload:
+    base-dir: uploads
     base-path: ${UPLOAD_BASE_PATH:/var/uploads/spotcamp}
     allowed-types: jpg,jpeg,png,gif,pdf
     max-size-mb: 10

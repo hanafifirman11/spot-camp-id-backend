@@ -152,7 +152,7 @@ public class BookingController {
             case "image/jpeg"    -> ".jpg";
             case "image/png"     -> ".png";
             case "application/pdf" -> ".pdf";
-            default -> throw new ValidationException("file", "Unsupported file type");
+            default -> throw new ValidationException("file", "Unsupported file type"); // safety net, should not reach here
         };
         String safeFileName = UUID.randomUUID() + extension;
 
