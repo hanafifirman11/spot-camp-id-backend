@@ -8,20 +8,15 @@ import com.spotcamp.module.booking.repository.BookingRepository;
 import com.spotcamp.module.campsite.entity.CampsiteStatus;
 import com.spotcamp.module.campsite.repository.CampsiteRepository;
 import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.search.RequiredSearch;
-import io.micrometer.core.instrument.search.Search;
-import org.junit.jupiter.api.BeforeEach;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,12 +31,6 @@ class AdminDashboardServiceTest {
     @Mock
     private BookingRepository bookingRepository;
 
-    @Mock
-    private MeterRegistry meterRegistry;
-
-    @InjectMocks
-    private AdminDashboardService adminDashboardService;
-
     @Test
     void getSummary_ShouldReturnCorrectData() {
         // Arrange
@@ -52,14 +41,12 @@ class AdminDashboardServiceTest {
         when(userRepository.countByRole(UserRole.CAMPER)).thenReturn(20L);
         when(bookingRepository.count()).thenReturn(50L);
 
-        // Mock MeterRegistry chain for CPU usage
-        RequiredSearch searchMock = mock(RequiredSearch.class);
-        Gauge gaugeMock = mock(Gauge.class);
-        
-        // Use doReturn to be safe
-        doReturn(searchMock).when(meterRegistry).get("system.cpu.usage");
-        when(searchMock.gauge()).thenReturn(gaugeMock);
-        when(gaugeMock.value()).thenReturn(0.45);
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+        AtomicReference<Double> systemCpu = new AtomicReference<>(0.45d);
+        Gauge.builder("system.cpu.usage", systemCpu, AtomicReference::get).register(meterRegistry);
+        AdminDashboardService adminDashboardService = new AdminDashboardService(
+                userRepository, campsiteRepository, bookingRepository, meterRegistry
+        );
 
         // Act
         AdminDashboardSummaryResponseDTO response = adminDashboardService.getSummary();
@@ -81,9 +68,10 @@ class AdminDashboardServiceTest {
     void getSummary_ShouldHandleMissingMetricsGracefully() {
         // Arrange
         when(userRepository.countByRole(UserRole.MERCHANT)).thenReturn(10L);
-        
-        // Mock MeterRegistry to throw exception or return null
-        when(meterRegistry.get(any())).thenThrow(new RuntimeException("Metric not found"));
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+        AdminDashboardService adminDashboardService = new AdminDashboardService(
+                userRepository, campsiteRepository, bookingRepository, meterRegistry
+        );
 
         // Act
         AdminDashboardSummaryResponseDTO response = adminDashboardService.getSummary();
