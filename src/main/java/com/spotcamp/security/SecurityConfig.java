@@ -22,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Arrays;
 import org.springframework.http.HttpMethod;
@@ -36,6 +37,9 @@ import org.springframework.http.HttpMethod;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    @Value("${spring.profiles.active:production}")
+    private String activeProfile;
+
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -43,13 +47,15 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authz -> authz
-                        // H2 Console
-                        .requestMatchers("/h2-console/**", "/api/v1/h2-console/**").permitAll()
+                .authorizeHttpRequests(authz -> {
+                        // H2 Console only in dev/local
+                        if ("dev".equals(activeProfile) || "local".equals(activeProfile)) {
+                            authz.requestMatchers("/h2-console/**", "/api/v1/h2-console/**").permitAll();
+                        }
                         
+                        authz
                         // Public authentication endpoints
                         .requestMatchers("/auth/register", "/auth/login", "/auth/refresh").permitAll()
                         
@@ -84,10 +90,14 @@ public class SecurityConfig {
                         .requestMatchers("/cart/**", "/bookings/**", "/users/me/**").hasAnyRole("CAMPER", "MERCHANT", "MERCHANT_ADMIN", "SUPERADMIN", "ADMIN")
                         
                         // All other endpoints require authentication
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated();
+                })
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        if ("dev".equals(activeProfile) || "local".equals(activeProfile)) {
+            http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
+        }
 
         return http.build();
     }
