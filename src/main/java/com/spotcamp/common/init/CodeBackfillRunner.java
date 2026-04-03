@@ -1,10 +1,10 @@
 package com.spotcamp.common.init;
 
-import com.spotcamp.authuser.domain.User;
-import com.spotcamp.authuser.domain.UserRole;
-import com.spotcamp.authuser.repository.UserRepository;
-import com.spotcamp.campsite.domain.Campsite;
-import com.spotcamp.campsite.repository.CampsiteRepository;
+import com.spotcamp.module.authuser.entity.User;
+import com.spotcamp.module.authuser.entity.UserRole;
+import com.spotcamp.module.authuser.repository.UserRepository;
+import com.spotcamp.module.campsite.entity.Campsite;
+import com.spotcamp.module.campsite.repository.CampsiteRepository;
 import com.spotcamp.common.util.CodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

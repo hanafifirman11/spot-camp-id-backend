@@ -1,0 +1,84 @@
+package com.spotcamp.security;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import com.spotcamp.module.authuser.service.CustomUserDetailsService;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+
+/**
+ * JWT authentication filter for processing JWT tokens in requests
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final JwtService jwtService;
+    private final CustomUserDetailsService userDetailsService;
+
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
+
+        final String authHeader = request.getHeader("Authorization");
+        final String jwt;
+        final String userEmail;
+
+        // Check if Authorization header exists and starts with "Bearer "
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Extract JWT token
+        jwt = authHeader.substring(7);
+        
+        try {
+            userEmail = jwtService.extractUsername(jwt);
+            
+            // If we have a valid token and no authentication is set in the context
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+                
+                // Get the user from UserDetails to validate the token
+                UserPrincipal principal = (UserPrincipal) userDetails;
+                
+                // Validate token
+                if (jwtService.validateToken(jwt, principal.getUser())) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    
+                    log.debug("Successfully authenticated user: {}", userEmail);
+                }
+            }
+        } catch (Exception e) {
+            log.debug("JWT token validation failed: {}", e.getMessage());
+            // Clear the security context in case of any error
+            SecurityContextHolder.clearContext();
+        }
+
+        filterChain.doFilter(request, response);
+    }
+}
