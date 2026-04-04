@@ -4,6 +4,9 @@ import com.spotcamp.common.exception.BusinessException;
 import com.spotcamp.common.exception.ResourceNotFoundException;
 import com.spotcamp.common.exception.ValidationException;
 import com.spotcamp.common.util.PageUtils;
+import com.spotcamp.module.inventory.dto.BundleAvailabilityResult;
+import com.spotcamp.module.inventory.dto.BundleComponentRequest;
+import com.spotcamp.module.inventory.dto.UnavailableComponent;
 import com.spotcamp.module.inventory.entity.Bundle;
 import com.spotcamp.module.inventory.entity.Product;
 import com.spotcamp.module.inventory.entity.ProductStatus;
@@ -374,57 +377,6 @@ public class BundleService {
             return UnavailabilityReason.ALREADY_BOOKED;
         }
         return UnavailabilityReason.INVALID_COMPONENT;
-    }
-
-    // Helper classes for bundle operations
-    public static class BundleComponentRequest {
-        private Long productId;
-        private Integer quantity;
-        
-        // Getters and setters
-        public Long getProductId() { return productId; }
-        public void setProductId(Long productId) { this.productId = productId; }
-        public Integer getQuantity() { return quantity; }
-        public void setQuantity(Integer quantity) { this.quantity = quantity; }
-    }
-
-    public static class BundleAvailabilityResult {
-        private boolean available;
-        private String message;
-        private List<UnavailableComponent> unavailableComponents;
-        
-        public static BundleAvailabilityResult available() {
-            BundleAvailabilityResult result = new BundleAvailabilityResult();
-            result.available = true;
-            return result;
-        }
-        
-        public static BundleAvailabilityResult unavailable(String message) {
-            BundleAvailabilityResult result = new BundleAvailabilityResult();
-            result.available = false;
-            result.message = message;
-            return result;
-        }
-        
-        public static BundleAvailabilityResult unavailable(List<UnavailableComponent> components) {
-            BundleAvailabilityResult result = new BundleAvailabilityResult();
-            result.available = false;
-            result.unavailableComponents = components;
-            return result;
-        }
-        
-        // Getters
-        public boolean isAvailable() { return available; }
-        public String getMessage() { return message; }
-        public List<UnavailableComponent> getUnavailableComponents() { return unavailableComponents; }
-    }
-
-    @lombok.Builder
-    @lombok.Data
-    public static class UnavailableComponent {
-        private Long productId;
-        private String productName;
-        private UnavailabilityReason reason;
     }
 
     public enum UnavailabilityReason {

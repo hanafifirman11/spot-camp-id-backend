@@ -2,6 +2,7 @@ package com.spotcamp.module.inventory.controller;
 
 import com.spotcamp.security.UserPrincipal;
 import com.spotcamp.module.inventory.dto.BundleDefinitionDTO;
+import com.spotcamp.module.inventory.dto.BundleComponentRequest;
 import com.spotcamp.module.inventory.dto.BundleRequestDTO;
 import com.spotcamp.module.inventory.entity.Bundle;
 import com.spotcamp.module.inventory.service.BundleService;
@@ -87,9 +88,9 @@ public class CampsiteBundleController {
     ) {
         log.info("Create bundle for campsite: {} by user: {}", campsiteId, principal.getId());
 
-        List<BundleService.BundleComponentRequest> components = request.getComponents().stream()
+        List<BundleComponentRequest> components = request.getComponents().stream()
                 .map(comp -> {
-                    BundleService.BundleComponentRequest componentReq = new BundleService.BundleComponentRequest();
+                    BundleComponentRequest componentReq = new BundleComponentRequest();
                     componentReq.setProductId(comp.getProductId());
                     componentReq.setQuantity(comp.getQuantity());
                     return componentReq;
