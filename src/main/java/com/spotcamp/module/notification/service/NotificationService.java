@@ -12,7 +12,6 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
@@ -22,6 +21,7 @@ public class NotificationService {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
+    @Transactional
     public Notification markAsRead(Long userId, Long notificationId) {
         Notification notification = notificationRepository.findByIdAndUserId(notificationId, userId)
                 .orElseThrow(() -> new BusinessException("Notification not found"));
@@ -29,6 +29,7 @@ public class NotificationService {
         return notificationRepository.save(notification);
     }
 
+    @Transactional
     public Notification createNotification(Long userId,
                                            Notification.NotificationType type,
                                            String title,
