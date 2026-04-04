@@ -30,11 +30,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -48,6 +50,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Tag(name = "Maps", description = "Visual Map Configuration and Availability")
 public class CampsiteMapController {
+    private static final Set<String> ALLOWED_IMAGE_CONTENT_TYPES = Set.of(
+            MediaType.IMAGE_JPEG_VALUE,
+            MediaType.IMAGE_PNG_VALUE,
+            MediaType.IMAGE_GIF_VALUE
+    );
 
     private final MapConfigurationService mapConfigService;
     private final SpotAvailabilityService spotAvailabilityService;
@@ -221,14 +228,25 @@ public class CampsiteMapController {
     ) {
         log.info("Upload map background for campsite: {} by user: {}", campsiteId, principal.getId());
 
-        // Validate file type
-        String contentType = image.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
+        if (image == null || image.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
-        // Save file
-        String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+        String contentType = image.getContentType();
+        if (contentType == null || !ALLOWED_IMAGE_CONTENT_TYPES.contains(contentType)) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String extension = switch (contentType) {
+            case "image/jpeg" -> ".jpg";
+            case "image/png" -> ".png";
+            case "image/gif" -> ".gif";
+            default -> null;
+        };
+        if (extension == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        String fileName = UUID.randomUUID() + extension;
         String fileUrl = "/api/v1/uploads/maps/" + campsiteId + "/" + fileName;
 
         try {
@@ -236,7 +254,7 @@ public class CampsiteMapController {
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
-            Files.copy(image.getInputStream(), uploadPath.resolve(fileName));
+            Files.copy(image.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             log.error("Failed to upload image", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

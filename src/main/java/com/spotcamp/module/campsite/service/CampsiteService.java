@@ -5,6 +5,7 @@ import com.spotcamp.module.campsite.entity.*;
 import com.spotcamp.module.campsite.repository.*;
 import com.spotcamp.common.exception.BusinessException;
 import com.spotcamp.common.exception.ResourceNotFoundException;
+import com.spotcamp.common.exception.ValidationException;
 import com.spotcamp.common.util.CodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,7 +22,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -29,6 +33,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CampsiteService {
+    private static final Set<String> ALLOWED_IMAGE_CONTENT_TYPES = Set.of(
+            MediaType.IMAGE_JPEG_VALUE,
+            MediaType.IMAGE_PNG_VALUE,
+            MediaType.IMAGE_GIF_VALUE
+    );
 
     private final CampsiteRepository campsiteRepository;
     private final CampsiteImageRepository imageRepository;
@@ -186,8 +195,23 @@ public class CampsiteService {
         Campsite campsite = campsiteRepository.findByIdAndOwnerId(campsiteId, merchantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Campsite", "id", campsiteId));
 
-        // Save file
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        if (file == null || file.isEmpty()) {
+            throw new ValidationException("file", "File is required and cannot be empty");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_IMAGE_CONTENT_TYPES.contains(contentType)) {
+            throw new ValidationException("file", "Only JPEG, PNG, and GIF files are allowed");
+        }
+
+        String extension = switch (contentType) {
+            case "image/jpeg" -> ".jpg";
+            case "image/png" -> ".png";
+            case "image/gif" -> ".gif";
+            default -> throw new ValidationException("file", "Unsupported file type");
+        };
+
+        String fileName = UUID.randomUUID() + extension;
         String fileUrl = "/api/v1/uploads/campsites/" + campsiteId + "/" + fileName;
 
         try {
@@ -195,7 +219,7 @@ public class CampsiteService {
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
-            Files.copy(file.getInputStream(), uploadPath.resolve(fileName));
+            Files.copy(file.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new BusinessException("Failed to upload image: " + e.getMessage());
         }
