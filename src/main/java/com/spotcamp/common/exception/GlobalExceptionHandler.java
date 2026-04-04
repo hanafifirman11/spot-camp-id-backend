@@ -123,11 +123,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(ValidationException ex) {
+    public ResponseEntity<ErrorResponse> handleValidationException(ValidationException ex, WebRequest request) {
         ErrorResponse body = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
             .status(422)
             .error("Validation Error")
             .message(ex.getMessage())
+            .path(request.getDescription(false).replace("uri=", ""))
+            .errorCode("VALIDATION_ERROR")
             .build();
         return ResponseEntity.unprocessableEntity().body(body);
     }
