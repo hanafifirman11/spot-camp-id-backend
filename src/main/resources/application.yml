@@ -156,6 +156,9 @@ app:
   # File Upload Configuration
   upload:
     base-dir: uploads
+    campsites-dir: ${app.upload.base-dir}/campsites
+    maps-dir: ${app.upload.base-dir}/maps
+    payments-dir: ${app.upload.base-dir}/payments
     base-path: ${UPLOAD_BASE_PATH:/var/uploads/spotcamp}
     allowed-types: jpg,jpeg,png,gif,pdf
     max-size-mb: 10
@@ -378,4 +381,5 @@ app:
   doku:
     environment: production
   upload:
+    base-dir: /var/spotcamp/uploads
     base-path: /data/uploads/spotcamp
