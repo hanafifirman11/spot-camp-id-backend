@@ -36,7 +36,8 @@ public class CampsiteService {
     private final AmenityRepository amenityRepository;
     private final ReviewRepository reviewRepository;
 
-    private static final String UPLOAD_DIR = "uploads/campsites/";
+    @org.springframework.beans.factory.annotation.Value("${app.upload.campsites-dir}")
+    private String campsitesUploadDir;
 
     /**
      * List campsites for a merchant
@@ -187,10 +188,10 @@ public class CampsiteService {
 
         // Save file
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        String filePath = UPLOAD_DIR + campsiteId + "/" + fileName;
+        String fileUrl = "/api/v1/uploads/campsites/" + campsiteId + "/" + fileName;
 
         try {
-            Path uploadPath = Paths.get(UPLOAD_DIR + campsiteId);
+            Path uploadPath = Paths.get(campsitesUploadDir, String.valueOf(campsiteId));
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
@@ -208,7 +209,7 @@ public class CampsiteService {
 
         CampsiteImage image = CampsiteImage.builder()
                 .campsite(campsite)
-                .imageUrl(filePath)
+                .imageUrl(fileUrl)
                 .caption(caption)
                 .displayOrder((int) imageCount)
                 .isPrimary(isPrimary)

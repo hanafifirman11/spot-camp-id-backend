@@ -46,7 +46,7 @@ class BookingControllerTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(bookingController, "uploadDir", "target/test-uploads");
+        ReflectionTestUtils.setField(bookingController, "paymentsUploadDir", "target/test-uploads");
     }
 
     @Test
