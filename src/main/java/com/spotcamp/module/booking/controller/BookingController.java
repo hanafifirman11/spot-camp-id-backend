@@ -53,8 +53,8 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "Bookings", description = "Booking and cart management operations")
 public class BookingController {
 
-    @Value("${app.upload.base-dir}")
-    private String uploadDir;
+    @Value("${app.upload.payments-dir}")
+    private String paymentsUploadDir;
 
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
         MediaType.IMAGE_JPEG_VALUE,
@@ -158,7 +158,7 @@ public class BookingController {
 
         // 5. Save
         try {
-            Path uploadPath = Paths.get(uploadDir, "payments", String.valueOf(bookingId));
+            Path uploadPath = Paths.get(paymentsUploadDir, String.valueOf(bookingId));
             Files.createDirectories(uploadPath);
             Files.copy(file.getInputStream(), uploadPath.resolve(safeFileName),
                        StandardCopyOption.REPLACE_EXISTING);

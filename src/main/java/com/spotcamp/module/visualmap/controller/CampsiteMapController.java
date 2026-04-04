@@ -24,6 +24,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -51,7 +52,8 @@ public class CampsiteMapController {
     private final MapConfigurationService mapConfigService;
     private final SpotAvailabilityService spotAvailabilityService;
 
-    private static final String UPLOAD_DIR = "uploads/maps/";
+    @Value("${app.upload.maps-dir}")
+    private String mapsUploadDir;
 
     @Operation(summary = "Get active map configuration")
     @ApiResponses(value = {
@@ -227,10 +229,10 @@ public class CampsiteMapController {
 
         // Save file
         String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-        String filePath = UPLOAD_DIR + campsiteId + "/" + fileName;
+        String fileUrl = "/api/v1/uploads/maps/" + campsiteId + "/" + fileName;
 
         try {
-            Path uploadPath = Paths.get(UPLOAD_DIR + campsiteId);
+            Path uploadPath = Paths.get(mapsUploadDir, String.valueOf(campsiteId));
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
@@ -240,7 +242,7 @@ public class CampsiteMapController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
 
-        return ResponseEntity.ok(UploadBackgroundResponseDTO.of(filePath));
+        return ResponseEntity.ok(UploadBackgroundResponseDTO.of(fileUrl));
     }
 
     private MapConfigurationResponseDTO mapToResponse(MapConfiguration config) {
